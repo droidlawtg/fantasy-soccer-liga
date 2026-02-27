@@ -1,0 +1,35 @@
+name: Fetch La Liga Stats from FBref
+
+on:
+  schedule:
+    # Runs at 1:00 AM UTC every day
+    - cron: '0 1 * * *'
+  workflow_dispatch:  # Allows you to trigger manually from the Actions tab
+
+jobs:
+  fetch-stats:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas lxml html5lib beautifulsoup4
+
+      - name: Fetch La Liga stats from FBref
+        run: python scripts/fetch_fbref.py
+
+      - name: Commit updated stats
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data/laliga-stats.json
+          git diff --staged --quiet || git commit -m "Auto-update La Liga stats [$(date -u '+%Y-%m-%d %H:%M UTC')]"
+          git push
